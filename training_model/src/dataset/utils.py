@@ -1,5 +1,6 @@
 import os
 import pandas
+from feature_extraction import FeatureExtractionPipeline
 
 def get_data_list(filepath: str) -> list[pandas.DataFrame]:
     data_list:list[pandas.DataFrame] = []
@@ -30,7 +31,7 @@ To see information about what each columns mean, see:
 def filter_columns(data: pandas.DataFrame):
     return data[['CNT', 'TIME', 'TIME_TICK', 'LPOGX', 'LPOGY', 'RPOGX', 'RPOGY', 'LPD',
        'LPS', 'LPV', 'RPD', 'RPS', 'RPV', 'RPUPILD', 'LPMM',
-       'LPMMV', 'RPMM', 'RPMMV', 'USER']]
+       'LPMMV', 'RPMM', 'RPMMV', 'USER','LABEL', 'looking_at_self']]
        
 def clear_blinks(data: pandas.DataFrame, extra:bool=False) -> pandas.DataFrame:
     """"
@@ -68,15 +69,31 @@ def handle_outliers(data: pandas.DataFrame) -> pandas.DataFrame:
     data = data[(data['BPOGY']>=0) & (data['BPOGY'] < 1)]
     return data.reset_index(drop=False)
 
+def label_data(data: pandas.DataFrame):
+    self_data = data[(data['FPOGX']>=0.4) & (data['FPOGX']<=0.6)]
+    self_data = self_data[(self_data['FPOGY']>=0.2) & (self_data['FPOGY'] <=0.6)]
+    self_data['looking_at_self'] = True
 
-def standardise_data(data: list[pandas.DataFrame]):
-    pupil_sizes_list = []
-    for _, row in data.iterrow():
-        rpupil_size_x =
-        rputil_size_y
+    not_self_data = data[~data.index.isin(self_data.index)]    
+    data = pandas.concat([self_data, not_self_data], sort=False).sort_index()
 
-        lputil_size_x
-        lputil_size_y
+    data = data.fillna({'looking_at_self': False})
+    return data
+        
 
-def normalise_data(data: pandas.DataFrame):
-    pass
+def calculate_featues(strategy='all', data:pandas.DataFrame = None):
+    Y = data['LABEL'][0]
+    data = data.drop(columns=['LABEL'])
+    feature_pipeline = FeatureExtractionPipeline(data=data)
+    feature_pipeline.run(strategy)
+    X  = feature_pipeline.X
+    return (X, Y)
+
+def test_FEP(data):
+    Y = data['LABEL'][0]
+    data = data.drop(columns=['LABEL'])
+    feature_pipeline = FeatureExtractionPipeline(data=data)
+    feature_pipeline.standardise_data()
+    feature_pipeline.get_dilation_periods()
+    X  = feature_pipeline.X
+    return (X, Y)

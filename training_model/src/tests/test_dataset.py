@@ -10,7 +10,7 @@ import numpy as np
 
 
 
-PATH =  os.getenv('PATH_TO_TM')+ "/src/data/training_client_data/today"
+PATH =  os.getenv('PATH_TO_TM')+ "/src/data/subject1"
 
 def test_data_loader():
     pass
@@ -33,11 +33,8 @@ def test_feature_extraction():
         fig.add_trace(go.Scatter(x=scatter_x ,y = entry['dilation'], mode='lines'))
 
     fig.show()
+    fig.write_html(os.getenv('PATH_TO_TM')+"/visulaisations/29_05_24.html")
 
-    x = x[0]
-    fig = px.box(y = [dilation['dilation'] for dilation in x], 
-                 x=[time['TIME'] for time in x])
-    fig.show()
 
 class TestStringMethods(unittest.TestCase):
 

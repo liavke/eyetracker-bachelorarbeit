@@ -3,6 +3,9 @@ from config import ColumnNames, Features
 import numpy as np
 from sklearn.impute import SimpleImputer
 import numpy as np
+from alive_progress import alive_bar
+import time
+pd.options.mode.chained_assignment = None  # default='warn'
 
 class FeatureExtractionPipeline:
     def __init__(self, data) -> None:
@@ -11,7 +14,7 @@ class FeatureExtractionPipeline:
     def run(self, strategy, measurement_timeframe:str = 'POTSDAM_2023'):
         self.standardise_data()
         self.get_dilation_periods( measurement_timeframe=measurement_timeframe, k_window=5)
-        self.calculate_statistical()
+        #self.calculate_statistical()
     
     def calculate_statistical(self):
         """"
@@ -61,33 +64,39 @@ class FeatureExtractionPipeline:
         [2]https://pandas.pydata.org/docs/reference/api/pandas.Series.bfill.html
         """
         temp_x = []
-        
+        else_df = self.X[self.X['GAZE_LABEL'] == 'else']
+        print("#### EXTRACTING DILATION PERIOD DATA ####")
+
         match measurement_timeframe:
             case 'custom':
                 for index, entry in self.X.iterrows():
                     if index == self.X.shape[0]-1:
                         break
                     next_entry = self.X.iloc[index+1]
-                    if ((entry['looking_at_self']==False)& (next_entry['looking_at_self']==True)):
-                            temp_x.append(self.X.iloc[index+1: index+k_window])
-            
+                    if ((entry['GAZE_LABEL']in ['looking_at_stranger', 'looking_at_self'])):
+                            if not self._has_blink(self.X.iloc[index+1: (index+k_window-1000)]):
+                                temp_x.append(temp_data)
             
             case 'POTSDAM_2023':
-                for index, entry in self.X.iterrows():
-                    if index == self.X.shape[0]-1:
-                        break
-                    next_entry = self.X.iloc[index+1]
-                    if ((entry['looking_at_self']==False)& (next_entry['looking_at_self']==True)):
-                            
-                            #find closest time entry to 3000ms from the start time https://www.statology.org/pandas-find-closest-value/
-                            end_time = self.X.iloc[(self.X['TIME']-(next_entry['TIME']+3)).abs().argsort()[:1]].index[0]
+                with alive_bar(len(self.X)) as bar:
+                    for index, entry in else_df.iterrows():
+                        time.sleep(0.1)
+                        bar()
 
-                            #init the time
-                            temp_data = self.X.iloc[index+1: end_time]
-                            temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
+                        if index == else_df.shape[0]-1:
+                            break
+                        next_entry = self.X.iloc[index+1]
+                        if (next_entry['GAZE_LABEL'] in ['looking_at_stranger', 'looking_at_self']):
+                                
+                                #find closest time entry to 3000ms from the start time https://www.statology.org/pandas-find-closest-value/
+                                end_time_index = self.X.iloc[(self.X['TIME']-(next_entry['TIME']+3)).abs().argsort()[:1]].index[0]
 
+                                #init the time
+                                temp_data = self.X.iloc[index+1: end_time_index].copy()
+                                temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
 
-                            temp_x.append(temp_data)
+                                if not self._has_blink(temp_data.iloc[:-500]):
+                                    temp_x.append(temp_data)
 
         #postprocessing
         self.X = self._post_processing(data=temp_x)
@@ -133,4 +142,16 @@ class FeatureExtractionPipeline:
             X_new.append(data)
         return X_new
                             
+    def _has_blink(self, data: pd.DataFrame) -> bool:
+        """"
+        This function checks if the dialtion period has any blinking in it
 
+        parameters:
+            -data: The data entry, made up of a pandas Dataframe of eye tracker data and the columns
+
+        result:
+            boolean
+        """
+        if data['BKDUR'].any() != 0:
+            return True
+        return False      

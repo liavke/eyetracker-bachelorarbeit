@@ -1,6 +1,7 @@
 import os
 import pandas
 from feature_extraction import FeatureExtractionPipeline
+import pickle
 
 def get_data_list(filepath: str) -> list[pandas.DataFrame]:
     data_list:list[pandas.DataFrame] = []
@@ -31,7 +32,7 @@ To see information about what each columns mean, see:
 def filter_columns(data: pandas.DataFrame):
     return data[['CNT', 'TIME', 'TIME_TICK', 'LPOGX', 'LPOGY', 'RPOGX', 'RPOGY', 'LPD',
        'LPS', 'LPV', 'RPD', 'RPS', 'RPV', 'RPUPILD', 'LPMM',
-       'LPMMV', 'RPMM', 'RPMMV', 'USER','LABEL', 'looking_at_self']]
+       'LPMMV', 'RPMM', 'RPMMV', 'USER','LABEL', 'GAZE_LABEL', 'BKDUR']]
        
 def clear_blinks(data: pandas.DataFrame, extra:bool=False) -> pandas.DataFrame:
     """"
@@ -62,23 +63,49 @@ def handle_outliers(data: pandas.DataFrame) -> pandas.DataFrame:
     parameters:
     -data: data point of type DataFrame
     """
+    out = data.copy()
     #handle point of gaze outliers
-    data = data[(data['FPOGX']>=0) & (data['FPOGX']<1)]
-    data = data[(data['FPOGY']>=0) & (data['FPOGY'] < 1)]
-    data = data[(data['BPOGX']>=0) & (data['BPOGX']<1)]
-    data = data[(data['BPOGY']>=0) & (data['BPOGY'] < 1)]
-    return data.reset_index(drop=False)
+    out = out[(out['FPOGX']>=0) & (out['FPOGX']<1)]
+    out = out[(out['FPOGY']>=0) & (out['FPOGY'] < 1)]
+    out = out[(out['BPOGX']>=0) & (out['BPOGX']<1)]
+    out = out[(out['BPOGY']>=0) & (out['BPOGY'] < 1)]
+    return out.reset_index(drop=False)
 
 def label_data(data: pandas.DataFrame):
-    self_data = data[(data['FPOGX']>=0.4) & (data['FPOGX']<=0.6)]
+    self_data = data.copy()
+    self_data = self_data[(self_data['FPOGX']>=0.4) & (self_data['FPOGX']<=0.6)]
     self_data = self_data[(self_data['FPOGY']>=0.2) & (self_data['FPOGY'] <=0.6)]
-    self_data['looking_at_self'] = True
+    self_data['GAZE_LABEL'] = 'looking_at_self'
 
-    not_self_data = data[~data.index.isin(self_data.index)]    
-    data = pandas.concat([self_data, not_self_data], sort=False).sort_index()
+    not_self_data = data.copy()
+    not_self_data = not_self_data[~not_self_data.index.isin(self_data.index)]    
+    out = pandas.concat([self_data, not_self_data], sort=False).sort_index()
 
-    data = data.fillna({'looking_at_self': False})
-    return data
+    out = out.fillna({'GAZE_LABEL': False})
+    return out
+
+def gaze_label_data(data: pandas.DataFrame):
+    self_data = data.copy()
+    stranger_data = data.copy()
+
+    self_data = self_data[(self_data['FPOGX']>=0.4) & (self_data['FPOGX']<=0.6)]
+    self_data = self_data[(self_data['FPOGY']>=0.2) & (self_data['FPOGY'] <=0.6)]
+    self_data['GAZE_LABEL'] = 'looking_at_self'
+
+    stranger_data = stranger_data[(stranger_data['FPOGX']>=0.8) & (stranger_data['FPOGX']<=1)]
+    stranger_data = stranger_data[(stranger_data['FPOGY']>=0.2) & (stranger_data['FPOGY'] <=0.8)]
+    stranger_data['GAZE_LABEL'] = 'looking_at_stranger'
+
+    not_self_data = data[~data.index.isin(self_data.index)].copy()
+    data_self = pandas.concat([self_data, not_self_data], sort=False)
+
+    not_stranger_data = data[~data.index.isin(stranger_data.index)].copy()    
+    data_stranger = pandas.concat([stranger_data, not_stranger_data], sort=False)
+
+    out = pandas.concat([data_self, data_stranger], sort=False).sort_values(by=['TIME']).reset_index()
+    
+    out = out.fillna({'GAZE_LABEL': 'else'})
+    return out
         
 
 def calculate_featues(strategy='all', data:pandas.DataFrame = None):
@@ -97,3 +124,7 @@ def test_FEP(data):
     feature_pipeline.get_dilation_periods()
     X  = feature_pipeline.X
     return (X, Y)
+
+def save_data_as_pickle(data):
+    with open('subject1.pickle', 'wb') as handle:
+        pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)

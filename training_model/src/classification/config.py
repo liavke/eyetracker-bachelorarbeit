@@ -1,5 +1,5 @@
 class Classifier():
-    def __init__(self) -> None:
+    def __init__(self, X, y) -> None:
         pass
 
     def fit(self):

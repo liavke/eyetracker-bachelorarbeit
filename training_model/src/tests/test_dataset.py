@@ -7,10 +7,11 @@ import unittest
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
+import pickle
 
 
 
-PATH =  os.getenv('PATH_TO_TM')+ "/src/data/subject1"
+PATH =  os.getenv('PATH_TO_TM')+ "/src/data/visualize"
 
 def test_data_loader():
     pass
@@ -24,7 +25,7 @@ def test_feature_extraction():
     dataset = Dataset(filepath=PATH)
     dataset.preprocess_data()
 
-    x,y = dataset.test_feature_extraction()
+    x,y = dataset.feature_extraction(strategy='all')
     fig = go.Figure()
 
     scatter_x = np.arange(max(len(df) for df in x[0]))
@@ -41,6 +42,16 @@ class TestStringMethods(unittest.TestCase):
     def test_upper(self):
         self.assertEqual('foo'.upper(), 'FOO')
 
+def test_visualizing_data():
+    PKL_PATH = os.getenv('PATH_TO_TM') + '/src/data/subject1/11_06_dilations.pkl'
+    fig = go.Figure()
+
+    with open(PKL_PATH, 'rb') as f:
+        data = pickle.load(f)
+        for entry in data:
+            if not entry['GAZE_LABEL'].eq('else').any() and len(entry)>400 and entry['GAZE_LABEL'].eq('looking_at_self').any():#entry['GAZE_LABEL'].eq('looking_at_stranger').any() and not entry['GAZE_LABEL'].eq('else').any():
+                fig.add_trace(go.Scatter(x=entry['TIME'] ,y = entry['dilation'], mode='lines'))
+    fig.show()
 
 if __name__ == "__main__":
-    test_feature_extraction()
+    test_visualizing_data()

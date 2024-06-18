@@ -5,18 +5,17 @@ from sklearn.impute import SimpleImputer
 import numpy as np
 from alive_progress import alive_bar
 import time
+from scipy.fft import fft
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class FeatureExtractionPipeline:
     def __init__(self, data) -> None:
         self.X:pd.DataFrame = data
     
-    def run(self, strategy, measurement_timeframe:str = 'POTSDAM_2023'):
-        self.standardise_data()
-        self.get_dilation_periods( measurement_timeframe=measurement_timeframe, k_window=5)
-        #self.calculate_statistical()
+    def run(self, strategy):
+        self.calculate_features()
     
-    def calculate_statistical(self):
+    def calculate_features(self):
         """"
         Calculates statistical features (mean, max, min, stardard diviation, variance) for each dilation period in the data.
 
@@ -30,6 +29,9 @@ class FeatureExtractionPipeline:
         - https://www.kaggle.com/code/pmarcelino/data-analysis-and-feature-extraction-with-python
         """
         features_df = pd.DataFrame
+        ft = fft(self.X)
+        S = np.abs(ft ** 2) / len(self.X)
+
         for  dp in self.X:
             dilation = dp[ColumnNames.DILATION].values
             temp_data = {

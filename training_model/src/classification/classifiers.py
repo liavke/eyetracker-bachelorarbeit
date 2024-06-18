@@ -3,7 +3,7 @@ from sklearn import tree
 from sklearn.svm import SVC # "Support vector classifier"
 import numpy as np
 from sklearn.naive_bayes import GaussianNB
-
+from sklearn.cluster import KMeans
 
 class SVM_Classifier(Classifier):
     def __init__(self) -> None:
@@ -44,9 +44,10 @@ class Decision_Trees_Classifier(Classifier):
 class K_Means_Classifier(Classifier):
     def __init__(self) -> None:
         super().__init__()
+        self.model = KMeans(n_clusters=3)
 
-    def fit(self):
-        pass
+    def fit(self, X_train):
+        self.model.fit(X_train)
 
     def predict(self):
         pass
@@ -56,6 +57,7 @@ class K_Means_Classifier(Classifier):
 
     def _set_feature_n(self):
         pass
+    
 
 class Naive_Bayes_Classifier(Classifier):
     def __init__(self) -> None:

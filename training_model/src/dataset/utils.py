@@ -2,18 +2,20 @@ import os
 import pandas as pd
 from feature_extraction import FeatureExtractionPipeline
 import pickle
+import numpy as np
 
 def get_data_list(filepath: str) -> list[pd.DataFrame]:
     data_list:list[pd.DataFrame] = []
     for filename in os.listdir(filepath):
         if filename.endswith('.pkl'):
             pkl_data =  get_pkl_data(os.path.join(filepath, filename))
-            data_list.append(pkl_data)
+            data_list.append(pkl_data) #not sure if it should append it
             return data_list
-        file = os.path.join(filepath, filename)
-        file_df = pd.read_csv(file)
-        #data = Data(table=file_df, columns=file_df.columns.columns.tolist)
-        data_list.append(file_df)
+        if filename.endswith('.csv'):
+            file = os.path.join(filepath, filename)
+            file_df = pd.read_csv(file)
+            #data = Data(table=file_df, columns=file_df.columns.columns.tolist)
+            data_list.append(file_df)
     return data_list
 
 def get_pkl_data(filepath):
@@ -94,9 +96,9 @@ def save_data_as_pickle(data):
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 def normalise_data(data):
-        xmin = min(data)
-        xmax = max(data)
-        return [(x - xmin) / (xmax - xmin) for x in data]
+        xmin = np.min(data)
+        xmax = np.max(data)
+        return (data - xmin) / (xmax - xmin) 
 
 def has_blink(data: pd.DataFrame) -> bool:
         """"
@@ -111,3 +113,6 @@ def has_blink(data: pd.DataFrame) -> bool:
         if data['BKDUR'].any() != 0:
             return True
         return False  
+
+def baseline(data):
+     return data-data[0]

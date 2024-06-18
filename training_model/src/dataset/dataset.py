@@ -33,9 +33,11 @@ class Dataset():
                 datapoint = utils.filter_columns(datapoint)
                 datapoint = self._standardise_data(datapoint)
                 datapoint = self._get_dilation_periods(datapoint, measurement_timeframe=measurement_timeframe, k_window=5)
+                datapoint = self._rename_columns(datapoint)
                 #datapoint.dropna()
                 processed_data.append(datapoint)
         self.data = processed_data
+        #self._save_data_as_pkl()
 
     def feature_extraction(self, strategy):
         #data = utils.standardise_data(self.data)
@@ -81,12 +83,16 @@ class Dataset():
                     next_entry = datapoint.iloc[index+1]
                     if ((entry['GAZE_LABEL']in ['looking_at_stranger', 'looking_at_self'])):
                             if not utils.has_blink(datapoint.iloc[index+1: (index+k_window-1000)]):
+                                #init the time
+                                temp_data = datapoint.iloc[next_index: end_time_index].copy()
+                                temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
+
                                 temp_x.append(temp_data)
             
             case 'POTSDAM_2023':
-                with alive_bar(len(datapoint)) as bar:
+                with alive_bar(len(else_indexes)) as bar:
                     for index in else_indexes:
-                        time.sleep(0.1)
+                        time.sleep(0.0000000000000000000000000000000001)
                         bar()
 
                         next_index = index+1
@@ -101,15 +107,18 @@ class Dataset():
                                 temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
 
                                 if not utils.has_blink(temp_data.iloc[:-500]):
+                                    
                                     temp_x.append(temp_data)
 
         #postprocessing
-        datapoint = self._post_processing(data=temp_x)
+        return self._post_processing(data=temp_x)
     
     def _standardise_data(self, datapoint):
-        dilation_r = datapoint[ColumnNames.DILATION_RIGHT]
-        dilation_l = datapoint[ColumnNames.DILATION_LEFT]
-        datapoint[ColumnNames.DILATION] = utils.normalise_data(((dilation_r+dilation_l)/2).to_list())
+        dilation = (datapoint[ColumnNames.DILATION_RIGHT] + datapoint[ColumnNames.DILATION_LEFT])/2
+        dilation = utils.normalise_data((dilation.values))
+        dilation = utils.baseline(dilation)
+        datapoint[ColumnNames.DILATION] = dilation
+        
         return datapoint
         #todo: get only dilation, user and label column
 
@@ -131,7 +140,7 @@ class Dataset():
         """
         X_new = []
         for data in (data):
-            if data['GAZE_LABEL'].eq(False).any() or data['GAZE_LABEL'].eq('else').any():
+            if data['GAZE_LABEL'].eq('else').any():
                 continue  
             backward_filled = data[ColumnNames.DILATION].replace(0, np.nan).bfill().to_numpy()
             data[ColumnNames.DILATION] = backward_filled
@@ -159,7 +168,16 @@ class Dataset():
         out = out.fillna({'GAZE_LABEL': 'else'})
         return out
     
-    def _save_data_as_pkl():
-        with open({self.subject}+'.pkl', 'wb') as file:
-            # Write the data to the file
-            pickle.dump(data, file)
+    def _save_data_as_pkl(self):
+        with open(self.filepath+{self.subject}+'.pkl', 'wb') as file:
+            pickle.dump(self.data, file)
+
+    def _rename_columns(self, data):
+        out = []
+        for entry in data:
+            if(type(data))==None:
+                print("")
+            if entry['GAZE_LABEL'].eq('looking_at_stranger').all():
+                entry['LABEL'] = 'stranger'
+                out.append(entry)
+        return out

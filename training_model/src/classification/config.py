@@ -1,4 +1,8 @@
-class Classifier():
+import sys
+import os
+sys.path.append(os.getenv('PATH_TO_CLASSIFICATION'))
+
+class BaseClassifier():
     def __init__(self, X, y) -> None:
         pass
 

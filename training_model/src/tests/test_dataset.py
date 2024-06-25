@@ -9,7 +9,7 @@ import plotly.express as px
 import numpy as np
 import pickle
 
-PATH =  os.getenv('PATH_TO_TM')+ "/src/data/visualize"
+PATH =  os.getenv('PATH_TO_TM')+ "/src/data/subject1"
 
 def test_data_loader():
     pass
@@ -17,7 +17,7 @@ def test_data_loader():
 def test_preprocessing():
     dataset = Dataset(filepath=PATH, subject='subject1')
     dataset.preprocess_data()
-    return dataset
+    return dataset.data
 
 def test_feature_extraction():
     dataset = Dataset(filepath=PATH, subject='subject1')
@@ -50,4 +50,5 @@ def test_visualizing_data():
     fig.show()
 
 if __name__ == "__main__":
-    test_feature_extraction()
+    data = test_preprocessing()
+    print("")

@@ -12,39 +12,34 @@ class FeatureExtractionPipeline:
     def __init__(self, data) -> None:
         self.X:pd.DataFrame = data
     
-    def run(self, strategy):
-        self.calculate_features()
-    
-    def calculate_features(self):
+    def run(self):
         """"
-        Calculates statistical features (mean, max, min, stardard diviation, variance) for each dilation period in the data.
+        Calculates statistical features (mean, max, min, stardard diviation, variance) for each self.X period in the data.
 
         Parameters: 
         - data: list of dictionaries of the dilaiton periods
 
         Return:
-        - data: dictionary of the statistical features with each row representing these features for each dilation period
+        - data: dictionary of the statistical features with each row representing these features for each self.X period
 
         Sources:
         - https://www.kaggle.com/code/pmarcelino/data-analysis-and-feature-extraction-with-python
         """
-        features_df = pd.DataFrame
-        ft = fft(self.X)
-        S = np.abs(ft ** 2) / len(self.X)
-
-        for  dp in self.X:
-            dilation = dp[ColumnNames.DILATION].values
-            temp_data = {
-                    Features.MAX: [np.max(dilation)],
-                    Features.MEAN: [np.mean(dilation)],
-                    Features.MIN: [np.min(dilation)],
-                    Features.STD: [np.std(dilation)],
-                    Features.VAR: [np.var(dilation)],
-                }
-            features_df = pd.concat(features_df, temp_data)
-            
-
-        self.X = features_df
-    
-    def calculate_fourier(self, data):
-        return data      
+        #ft = fft(self.X)
+        #S = np.abs(ft ** 2) / len(self.X)
+        return pd.DataFrame({
+                Features.MAX: [np.max(self.X)],
+                Features.MEAN: [np.mean(self.X)],
+                Features.MIN: [np.min(self.X)],
+                Features.STD: [np.std(self.X)],
+                #Features.VAR: [np.var(self.X)],
+                #Features.POWER : [np.mean(self.X ** 2)],
+                #Features.PEAK : [np.max(np.abs(self.X))],
+                #Features.P2P : [np.ptp(self.X)],
+                #Features.CRESTFACTOR :[np.max(np.abs(self.X)) / np.sqrt(np.mean(self.X ** 2))],
+                #Features.MAX_FOURIER: np.max(S),
+                #Features.SUM_FOURIER: np.sum(S),
+                #Features.MEAN_FOURIER: np.mean(S),
+                #Features.VAR_FOURIER: np.var(S),
+                #Features.PEAK_FOURIER: np.max(np.abs(S)),
+            })

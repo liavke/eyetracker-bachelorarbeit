@@ -4,6 +4,8 @@ from feature_extraction import FeatureExtractionPipeline
 import pickle
 import numpy as np
 
+from scipy.ndimage import gaussian_filter1d
+
 def get_data_list(filepath: str) -> list[pd.DataFrame]:
     data_list:list[pd.DataFrame] = []
     for filename in os.listdir(filepath):
@@ -116,3 +118,15 @@ def has_blink(data: pd.DataFrame) -> bool:
 
 def baseline(data):
      return data-data[0]
+
+
+def smoothing(strategy, window_size, data):
+    #todo: supply source
+    match strategy:
+        case 'convolution':
+            window = np.ones(window_size) / window_size
+            return np.convolve(data, window, mode='valid')
+        
+        case 'gaussian':
+            sigma = 1
+            return gaussian_filter1d(data, sigma)

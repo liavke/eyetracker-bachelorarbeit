@@ -1,9 +1,0 @@
-pyautogui
-pygetwindow
-pywinauto
-python-pygaze==0.7.6
- gaze-tracking==0.0.1 
- opencv-python==4.9.0.8
- screeninfo
- plotly
- pandas

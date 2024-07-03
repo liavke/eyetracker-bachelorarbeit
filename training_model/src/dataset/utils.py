@@ -3,6 +3,7 @@ import pandas as pd
 from feature_extraction import FeatureExtractionPipeline
 import pickle
 import numpy as np
+import plotly.graph_objects as go
 
 from scipy.ndimage import gaussian_filter1d
 
@@ -130,3 +131,14 @@ def smoothing(strategy, window_size, data):
         case 'gaussian':
             sigma = 1
             return gaussian_filter1d(data, sigma)
+        
+def calculate_mean_dilation(x, y):
+    mean_dil = []
+
+    for index in range(y):
+        mean_value = np.mean([entry[index] for entry in x])
+        mean_dil.append(mean_value)
+
+    return mean_dil
+
+#def calculate_std()    

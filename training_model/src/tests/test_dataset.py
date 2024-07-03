@@ -9,7 +9,7 @@ import plotly.express as px
 import numpy as np
 import pickle
 
-PATH =  os.getenv('PATH_TO_TM')+ "/src/data/subject1"
+PATH =  os.getenv('PATH_TO_TM')+ "/src/data/"
 
 def test_data_loader():
     pass
@@ -39,16 +39,10 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual('foo'.upper(), 'FOO')
 
 def test_visualizing_data():
-    PKL_PATH = os.getenv('PATH_TO_TM') + '/src/data/subject1/11_06_dilations.pkl'
-    fig = go.Figure()
-
-    with open(PKL_PATH, 'rb') as f:
-        data = pickle.load(f)
-        for entry in data:
-            if not entry['GAZE_LABEL'].eq('else').any() and len(entry)>400 and entry['GAZE_LABEL'].eq('looking_at_stranger').any():
-                fig.add_trace(go.Scatter(x=entry['TIME'] ,y = entry['dilation'], mode='lines'))
-    fig.show()
+    dataset = Dataset(filepath=PATH, subject='subject1')
+    dataset.preprocess_data(measurement_timeframe="3000ms")
+    dataset.visualisation()
 
 if __name__ == "__main__":
-    data = test_preprocessing()
+    test_visualizing_data()
     print("")

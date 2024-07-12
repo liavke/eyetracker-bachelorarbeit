@@ -49,7 +49,7 @@ def calculate_eer(y_test, predictions):
     self_eer = eer(current_label='self', ground_truth=y_test, predictions=predictions)
 
     #eer for friend
-    friend_eer = eer(current_label='friend', ground_truth=y_test, predictions=predictions)
+    friend_eer = eer(current_label='other', ground_truth=y_test, predictions=predictions)
     
     #eer for deepfake
     deepfake_eer = eer(current_label='deepfake', ground_truth=y_test, predictions=predictions)

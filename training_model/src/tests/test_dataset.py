@@ -7,7 +7,7 @@ import unittest
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
-import pickle
+from collections import Counter
 
 PATH =  os.getenv('PATH_TO_TM')+ "/src/data/"
 
@@ -20,17 +20,16 @@ def test_preprocessing():
     return dataset.data
 
 def test_feature_extraction():
-    dataset = Dataset(filepath=PATH, subject='subject1')
-    dataset.preprocess_data()
-    data = dataset.data
-
-    fig = go.Figure()
-
-    for entry in data[0]:
-        fig.add_trace(go.Scatter(x=entry['TIME'] ,y = entry['dilation'], mode='lines'))
-
-    fig.show()
-    fig.write_html(os.getenv('PATH_TO_TM')+"/visulaisations/29_05_24.html")
+    dataset = Dataset(filepath=PATH, subject='subject3')
+    dataset.preprocess_data(measurement_timeframe="1000ms")
+    X, y = dataset.feature_extraction()
+    counter = Counter(y)
+    self_count = (counter['self'])
+    deepfake_count = (counter['deepfake'])
+    friend_count = (counter['other'])
+    print(f'count for self: {self_count}')
+    print(f'count for deepfake: {deepfake_count}')
+    print(f'count for other: {friend_count}')
 
 
 class TestStringMethods(unittest.TestCase):
@@ -39,9 +38,27 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual('foo'.upper(), 'FOO')
 
 def test_visualizing_data():
-    dataset = Dataset(filepath=PATH, subject='subject1')
+    dataset = Dataset(filepath=PATH, subject='subject2')
     dataset.preprocess_data(measurement_timeframe="3000ms")
     dataset.visualisation()
+    #ataset.plot_dilation_over_time(label='self')
+
+def get_time_per_subject():
+    deepfake_time = 0
+    self_time = 0
+    dataset = Dataset(filepath=PATH, subject='subject2')
+
+    for entry in dataset.data:
+        time = entry['TIME'].values
+        if 'self' in entry['LABEL'].values:
+            self_time += (time[-1]-time[0])
+        if 'deepfake' in  entry['LABEL'].values:
+            deepfake_time += (time[-1]-time[0])
+
+    print(f'deepfake time: {deepfake_time/60}')
+    print(f'self time: {self_time/60}')
+
+    print("")
 
 if __name__ == "__main__":
     test_visualizing_data()

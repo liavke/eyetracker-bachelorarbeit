@@ -25,8 +25,8 @@ class FeatureExtractionPipeline:
         Sources:
         - https://www.kaggle.com/code/pmarcelino/data-analysis-and-feature-extraction-with-python
         """
-        #ft = fft(self.X)
-        #S = np.abs(ft ** 2) / len(self.X)
+        ft = fft(self.X)
+        S = np.abs(ft ** 2) / len(self.X)
         return pd.DataFrame({
                 Features.MAX: [np.max(self.X)],
                 Features.MEAN: [np.mean(self.X)],
@@ -37,9 +37,9 @@ class FeatureExtractionPipeline:
                 #Features.PEAK : [np.max(np.abs(self.X))],
                 #Features.P2P : [np.ptp(self.X)],
                 #Features.CRESTFACTOR :[np.max(np.abs(self.X)) / np.sqrt(np.mean(self.X ** 2))],
-                #Features.MAX_FOURIER: np.max(S),
+                Features.MAX_FOURIER: np.max(S),
                 #Features.SUM_FOURIER: np.sum(S),
-                #Features.MEAN_FOURIER: np.mean(S),
-                #Features.VAR_FOURIER: np.var(S),
-                #Features.PEAK_FOURIER: np.max(np.abs(S)),
+                Features.MEAN_FOURIER: np.mean(S),
+                Features.VAR_FOURIER: np.var(S),
+                Features.PEAK_FOURIER: np.max(np.abs(S)),
             })

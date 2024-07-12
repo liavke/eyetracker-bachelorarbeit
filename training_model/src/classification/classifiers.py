@@ -26,15 +26,17 @@ class MultiBaseClassifiers(BaseClassifier):
         self.y = y
     
     def run(self):
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.33, random_state=42, shuffle=True)
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.2, random_state=42, shuffle=True)
         self.fit(X_train=X_train, y_train=y_train)
         return self.evaluate(X_test=X_test, y_test=y_test)
 
 
     def fit(self, X_train, y_train):
+        print("### TRAINING SVM ###")
         self.svm_model.fit(X_train, y_train)
+        print("### TRAINING TREES ###")
         self.trees_model.fit(X_train, y_train)
-        #self.kmeans_model.fit(X_train)
+        print("### TRAINING NAIV BAYES ###")
         self.nb_model.fit(X_train,y_train)
 
 
@@ -54,6 +56,7 @@ class MultiBaseClassifiers(BaseClassifier):
 
     def evaluate(self, X_test, y_test):
         evaluations = pd.DataFrame()
+        raw_results = pd.DataFrame()
         roc_auc_list = []
 
         predictions = self.predict(X_test)
@@ -67,12 +70,15 @@ class MultiBaseClassifiers(BaseClassifier):
                 })
             evaluations = pd.concat([evaluations, score_df])
 
+            raw_results[model_name] = pred
+
         for item in prediction_probablities.values():
             rocauc_score = roc_auc_score(y_score=item, y_true=y_test, multi_class='ovr')
             roc_auc_list.append(rocauc_score)
 
         evaluations["rocauc_score"] = roc_auc_list
-        return evaluations
+        raw_results['ground truth'] = y_test
+        return evaluations, raw_results
 
 
     def _set_feature_n(self):

@@ -45,7 +45,7 @@ class Dataset():
         #self._save_data_as_pkl()
 
     def feature_extraction(self):
-        #data = utils.standardise_data(self.data)
+        print("### FEATURE EXTRACTION ###")
         X_df = pd.DataFrame()
         Y_list = []
         for entry in self.data:
@@ -55,6 +55,7 @@ class Dataset():
             X = feature_pipeline.run()
             X_df = pd.concat([X_df, X])
             Y_list.append(Y)
+        #balanced_x, balanced_y = utils.balance_data(X=X_df, y=Y_list)
         return X_df, Y_list
 
     def _get_dilation_periods(self, data, measurement_timeframe="3000ms"): #or windows? search a better name maybe
@@ -88,61 +89,73 @@ class Dataset():
                 time.sleep(0.0000000000000000000000000000000001)
                 bar()
                 else_indexes = datapoint[datapoint['GAZE_LABEL'] == 'else'].index
-                self_indexes = datapoint[datapoint['GAZE_LABEL'] == 'looking_at_self'].index
-                stranger_indexes = datapoint[datapoint['GAZE_LABEL'] == 'looking_at_familiars'].index
+                self_indexes = datapoint[datapoint['GAZE_LABEL'] == 'gaze_self'].index
+                other_indexes = datapoint[datapoint['GAZE_LABEL'] == 'gaze_other'].index
                 print("#### EXTRACTING DILATION PERIOD DATA ####")
 
                 match measurement_timeframe:
                     case '1000ms':
                             for index in else_indexes:
                                 next_index = index+1
-                                if next_index in self_indexes or next_index in stranger_indexes:
+                                if next_index in self_indexes or next_index in other_indexes:
                                         start_time = datapoint.iloc[next_index]['TIME']
-                                        
-                                        #find closest time entry to 3000ms from the start time https://www.statology.org/pandas-find-closest-value/
-                                        end_time_index = datapoint.iloc[(datapoint['TIME']-(start_time+1)).abs().argsort()[:1]].index[0]
 
-                                        #init the time
-                                        temp_data = datapoint.iloc[next_index: end_time_index].copy()
-                                        temp_data['TIME'] = np.linspace(0, 1, temp_data.shape[0])
-
-                                        if not utils.has_blink(temp_data):
+                                        #check if subject did not blink pior to gaze change
+                                        second_priot_to_index = datapoint.iloc[(datapoint['TIME']-(start_time-1)).abs().argsort()[:1]].index[0]
+                                        if not utils.has_blink(datapoint.iloc[second_priot_to_index:next_index]):
                                             
-                                            temp_x.append(temp_data)
+                                            #find closest time entry to 3000ms from the start time https://www.statology.org/pandas-find-closest-value/
+                                            end_time_index = datapoint.iloc[(datapoint['TIME']-(start_time+1)).abs().argsort()[:1]].index[0]
+
+                                            #init the time
+                                            temp_data = datapoint.iloc[next_index: end_time_index].copy()
+                                            temp_data['TIME'] = np.linspace(0, 1, temp_data.shape[0])
+
+                                            if not utils.has_blink(temp_data):
+                                                
+                                                temp_x.append(temp_data)
 
                     case '1500ms':
                             for index in else_indexes:
                                     next_index = index+1
-                                    if next_index in self_indexes or next_index in stranger_indexes:
+                                    if next_index in self_indexes or next_index in other_indexes:
                                             start_time = datapoint.iloc[next_index]['TIME']
-                                            
-                                            #find closest time entry to 1500ms from the start time https://www.statology.org/pandas-find-closest-value/
-                                            end_time_index = datapoint.iloc[(datapoint['TIME']-(start_time+1.5)).abs().argsort()[:1]].index[0]
 
-                                            #init the time
-                                            temp_data = datapoint.iloc[next_index: end_time_index].copy()
-                                            temp_data['TIME'] = np.linspace(0, 1.5, temp_data.shape[0])
-
-                                            if not utils.has_blink(temp_data.iloc[:-500]):
+                                            #check if subject did not blink pior to gaze change
+                                            second_priot_to_index = datapoint.iloc[(datapoint['TIME']-(start_time-1)).abs().argsort()[:1]].index[0]
+                                            if not utils.has_blink(datapoint.iloc[second_priot_to_index:next_index]):
                                                 
-                                                temp_x.append(temp_data)
+                                                #find closest time entry to 1500ms from the start time https://www.statology.org/pandas-find-closest-value/
+                                                end_time_index = datapoint.iloc[(datapoint['TIME']-(start_time+1.5)).abs().argsort()[:1]].index[0]
+
+                                                #init the time
+                                                temp_data = datapoint.iloc[next_index: end_time_index].copy()
+                                                temp_data['TIME'] = np.linspace(0, 1.5, temp_data.shape[0])
+
+                                                if not utils.has_blink(temp_data.iloc[:-500]):
+                                                    
+                                                    temp_x.append(temp_data)
                     
                     case '3000ms':
                             for index in else_indexes:
                                 next_index = index+1
-                                if next_index in self_indexes or next_index in stranger_indexes:
+                                if next_index in self_indexes or next_index in other_indexes:
                                         start_time = datapoint.iloc[next_index]['TIME']
-                                        
-                                        #find closest time entry to 3000ms from the start time https://www.statology.org/pandas-find-closest-value/
-                                        end_time_index = datapoint.iloc[(datapoint['TIME']-(start_time+3)).abs().argsort()[:1]].index[0]
 
-                                        #init the time
-                                        temp_data = datapoint.iloc[next_index: end_time_index].copy()
-                                        temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
+                                        #check if subject did not blink pior to gaze change
+                                        second_priot_to_index = datapoint.iloc[(datapoint['TIME']-(start_time-1)).abs().argsort()[:1]].index[0]
+                                        if not utils.has_blink(datapoint.iloc[index:next_index]):
+ 
+                                            #find closest time entry to 3000ms from the start time https://www.statology.org/pandas-find-closest-value/
+                                            end_time_index = datapoint.iloc[(datapoint['TIME']-(start_time+3)).abs().argsort()[:1]].index[0]
 
-                                        if not utils.has_blink(temp_data.iloc[:-500]):
-                                            
-                                            temp_x.append(temp_data)
+                                            #init the time
+                                            temp_data = datapoint.iloc[next_index: end_time_index].copy()
+                                            #temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
+
+                                            if not utils.has_blink(temp_data.iloc[:-500]):
+                                                
+                                                temp_x.append(temp_data)
         return self._post_processing(data=temp_x, min_length=cutoff_len[measurement_timeframe])
 
         #postprocessing
@@ -178,7 +191,7 @@ class Dataset():
             if entry['GAZE_LABEL'].eq('else').any():
                 continue  
             backward_filled = entry[ColumnNames.DILATION].replace(0, np.nan).bfill().to_numpy()
-            if len(backward_filled)>=min_length:
+            if len(backward_filled)>=10:#min_length:
                 baseline_corrected = utils.baseline(backward_filled)
                 entry[ColumnNames.DILATION] = baseline_corrected
                 X_new.append(entry)
@@ -189,12 +202,12 @@ class Dataset():
         stranger_data = data.copy()
 
         self_data = self_data[(self_data['FPOGX']>=0.4) & (self_data['FPOGX']<=0.6)]
-        self_data = self_data[(self_data['FPOGY']>=0.2) & (self_data['FPOGY'] <=0.6)]
-        self_data['GAZE_LABEL'] = 'looking_at_self'
+        self_data = self_data[(self_data['FPOGY']>=0.2) & (self_data['FPOGY'] <=0.8)]
+        self_data['GAZE_LABEL'] = 'gaze_self'
 
         stranger_data = stranger_data[(stranger_data['FPOGX']>=0.8) & (stranger_data['FPOGX']<=1)]
         stranger_data = stranger_data[(stranger_data['FPOGY']>=0.2) & (stranger_data['FPOGY'] <=0.8)]
-        stranger_data['GAZE_LABEL'] = 'looking_at_familiars'
+        stranger_data['GAZE_LABEL'] = 'gaze_other'
 
         gaze_data = pd.concat([self_data, stranger_data], sort=False)
 
@@ -214,8 +227,8 @@ class Dataset():
         for entry in data:
             if(type(data))==None:
                 print("None data")
-            if entry['GAZE_LABEL'].eq('looking_at_familiars').all():
-                entry['LABEL'] = 'friend'
+            if entry['GAZE_LABEL'].eq('gaze_other').all():
+                entry['LABEL'] = 'other'
                 out.append(entry[['dilation','LABEL', 'TIME']])
             else:
                 out.append(entry[['dilation','LABEL','TIME']])
@@ -225,36 +238,45 @@ class Dataset():
         data['USER'] = self.subject
         return data
     
-    def visualisation(self):
+    def visualisation(self, options: list[str] = ['self', 'other', 'deepfake', 'difference_self_deepfake']):
         fig = go.Figure()
 
-        labels = ['self', 'friend','deepfake']
-
         dilation_self = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='self']
-        dilation_friend = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='friend']
+        dilation_other = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='other']
         dilation_deepfake = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='deepfake']
 
         min_lengths = [min(len(entry) for entry in dilation_self),
-                        min(len(entry) for entry in dilation_friend),
+                        min(len(entry) for entry in dilation_other),
                         min(len(entry) for entry in dilation_deepfake)]
          
         filtered_dil_self = [entry[:min_lengths[0]] for entry in dilation_self]
-        filtered_dil_friend = [entry[:min_lengths[1]] for entry in dilation_friend]
+        filtered_dil_other = [entry[:min_lengths[1]] for entry in dilation_other]
         filtered_dil_deepfake = [entry[:min_lengths[2]] for entry in dilation_deepfake]
          
-        filtered_dilations= [ utils.calculate_mean_dilation(filtered_dil_self , min_lengths[0]),
-                                utils.calculate_mean_dilation(filtered_dil_friend, min_lengths[1] ),
+        mean_dilations= [ utils.calculate_mean_dilation(filtered_dil_self , min_lengths[0]),
+                                utils.calculate_mean_dilation(filtered_dil_other, min_lengths[1] ),
                                 utils.calculate_mean_dilation(filtered_dil_deepfake, min_lengths[2] )]
         
         #stds= [ utils.calculate_mean_dilation(filtered_dil_self , min_lengths[0]),
-       #                         utils.calculate_mean_dilation(filtered_dil_friend, min_lengths[1] ),
+       #                         utils.calculate_mean_dilation(filtered_dil_other, min_lengths[1] ),
         #                       utils.calculate_mean_dilation(filtered_dil_deepfake, min_lengths[2] )]
 
-        for index in range(3):
+        diff_len = np.min([len(mean_dilations[2]), len(mean_dilations[0])])
+        self_df_diff_dil = mean_dilations[2][:diff_len]-mean_dilations[0][:diff_len]
+        min_lengths.append(diff_len)
+
+        plot_data = {
+             'self' : mean_dilations[0],
+             'other' : mean_dilations[1],
+             'deepfake': mean_dilations[2],
+             'difference_self_deepfake': self_df_diff_dil
+        }
+
+        for index, opt in enumerate(options):
               fig.add_trace(go.Scatter(
                    x=np.linspace(start=0, stop=3, num=min_lengths[index]), 
-                   y=filtered_dilations[index], 
-                   mode='lines', name=labels[index],
+                   y=plot_data[opt], 
+                   mode='lines', name=opt,
               ))
         fig_title = 'Graph of labels for ' + self.subject
         fig.update_layout(
@@ -262,3 +284,69 @@ class Dataset():
         )
         fig.show()
         fig.to_html('mean_graph_sub2.html')
+
+    def visualize_raw_data(self, options):
+        fig = go.Figure()
+
+        dilation_self = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='self']
+        dilation_other = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='other']
+        dilation_deepfake = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='deepfake']
+
+        dilation_data = {
+             'self': dilation_self,
+             'other': dilation_other,
+             'deepfake':dilation_deepfake
+        }
+
+        min_lengths = [min(len(entry) for entry in dilation_self),
+                        min(len(entry) for entry in dilation_other),
+                        min(len(entry) for entry in dilation_deepfake)]
+
+        for index, opt in enumerate(options):
+              for entry in dilation_data[opt]:
+                fig.add_trace(go.Scatter(
+                    x=np.linspace(start=0, stop=3, num=min_lengths[index]), 
+                    y=entry, 
+                    mode='lines'
+                ))
+        fig_title = 'Graph of labels for ' + self.subject
+        fig.update_layout(
+             title=fig_title
+        )
+        fig.show()
+
+    def plot_dilation_over_time(self, label:str):
+        fig = go.Figure()
+
+        self_ = [entry for entry in self.data if entry['LABEL'].values.all()=='self']
+        deepfake_ = [entry for entry in self.data if entry['LABEL'].values.all()=='deepfake']
+
+        self_dilation= []
+        self_time=[]
+
+        deepfake_dilation =[]
+        deepfake_time =[]
+
+
+        for d in self_:
+            self_dilation.extend(d['dilation'].values)
+            self_time.extend(d['TIME'].values)
+
+        for d in deepfake_:
+            deepfake_dilation.extend(d['dilation'].values)
+            deepfake_time.extend(d['TIME'].values)
+
+        fig.add_trace(go.Scatter(
+                    x=np.linspace(start=0, stop=len(self_dilation)), 
+                    y=self_dilation, 
+                    mode='lines', name='self'
+                ))
+        fig.add_trace(go.Scatter(
+                    x=np.linspace(start=0, stop=len(deepfake_dilation)), 
+                    y=deepfake_dilation, 
+                    mode='lines', name= 'deepfake'
+                ))
+        
+        fig.show()
+        
+

@@ -4,6 +4,7 @@ from feature_extraction import FeatureExtractionPipeline
 import pickle
 import numpy as np
 import plotly.graph_objects as go
+from imblearn.over_sampling import SMOTE
 
 from scipy.ndimage import gaussian_filter1d
 
@@ -133,12 +134,19 @@ def smoothing(strategy, window_size, data):
             return gaussian_filter1d(data, sigma)
         
 def calculate_mean_dilation(x, y):
-    mean_dil = []
+    mean_dil = np.empty(y)
 
     for index in range(y):
         mean_value = np.mean([entry[index] for entry in x])
-        mean_dil.append(mean_value)
+        mean_dil[index] = mean_value
 
     return mean_dil
 
-#def calculate_std()    
+def balance_data(X, y):
+    """"
+    Balances the classes through oversampling
+    """
+    print("### OVERSAMPLING DATA ###")
+    smot = SMOTE()
+    x_balanced, y_balanced = smot.fit_resample(X=X, y=y)
+    return x_balanced, y_balanced

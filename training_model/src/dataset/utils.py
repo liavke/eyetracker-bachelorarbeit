@@ -150,3 +150,11 @@ def balance_data(X, y):
     smot = SMOTE()
     x_balanced, y_balanced = smot.fit_resample(X=X, y=y)
     return x_balanced, y_balanced
+
+def fill_missing_data_with_nan(dilation, max_length):
+    #[lst + [np.nan]*(max_lengths[0] - len(lst)) for lst in dilation_self]
+    out = []
+    for entry in dilation:
+        entry = np.append(entry, [np.nan]*(max_length -len(entry)))
+        out.append(entry)
+    return out

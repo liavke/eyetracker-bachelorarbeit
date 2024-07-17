@@ -55,8 +55,8 @@ class Dataset():
             X = feature_pipeline.run()
             X_df = pd.concat([X_df, X])
             Y_list.append(Y)
-        #balanced_x, balanced_y = utils.balance_data(X=X_df, y=Y_list)
-        return X_df, Y_list
+        balanced_x, balanced_y = utils.balance_data(X=X_df, y=Y_list)
+        return balanced_x, balanced_y
 
     def _get_dilation_periods(self, data, measurement_timeframe="3000ms"): #or windows? search a better name maybe
         """"
@@ -187,14 +187,16 @@ class Dataset():
         https://pandas.pydata.org/docs/reference/api/pandas.Series.bfill.html
         """
         X_new = []
+        outlier = []
         for entry in (data):
             if entry['GAZE_LABEL'].eq('else').any():
                 continue  
             backward_filled = entry[ColumnNames.DILATION].replace(0, np.nan).bfill().to_numpy()
-            if len(backward_filled)>=10:#min_length:
+            if len(backward_filled)>10:#min_length:
                 baseline_corrected = utils.baseline(backward_filled)
                 entry[ColumnNames.DILATION] = baseline_corrected
                 X_new.append(entry)
+            outlier.append(backward_filled)
         return X_new   
     
     def _gaze_label_data(self, data: pd.DataFrame):
@@ -238,50 +240,52 @@ class Dataset():
         data['USER'] = self.subject
         return data
     
-    def visualisation(self, options: list[str] = ['self', 'other', 'deepfake', 'difference_self_deepfake']):
+    def visualisation(self, options: list[str] = ['self', 'other', 'deepfake', 'difference between self/deepfake']):
         fig = go.Figure()
 
         dilation_self = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='self']
         dilation_other = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='other']
         dilation_deepfake = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='deepfake']
-
-        min_lengths = [min(len(entry) for entry in dilation_self),
-                        min(len(entry) for entry in dilation_other),
-                        min(len(entry) for entry in dilation_deepfake)]
-         
-        filtered_dil_self = [entry[:min_lengths[0]] for entry in dilation_self]
-        filtered_dil_other = [entry[:min_lengths[1]] for entry in dilation_other]
-        filtered_dil_deepfake = [entry[:min_lengths[2]] for entry in dilation_deepfake]
-         
-        mean_dilations= [ utils.calculate_mean_dilation(filtered_dil_self , min_lengths[0]),
-                                utils.calculate_mean_dilation(filtered_dil_other, min_lengths[1] ),
-                                utils.calculate_mean_dilation(filtered_dil_deepfake, min_lengths[2] )]
         
-        #stds= [ utils.calculate_mean_dilation(filtered_dil_self , min_lengths[0]),
-       #                         utils.calculate_mean_dilation(filtered_dil_other, min_lengths[1] ),
-        #                       utils.calculate_mean_dilation(filtered_dil_deepfake, min_lengths[2] )]
+        max_lengths = [max(len(entry) for entry in dilation_self),
+                        max(len(entry) for entry in dilation_other),
+                        max(len(entry) for entry in dilation_deepfake)]
+        
+        filtered_dil_self = utils.fill_missing_data_with_nan(dilation=dilation_self, max_length=max_lengths[0])
+        filtered_dil_other = utils.fill_missing_data_with_nan(dilation=dilation_other, max_length=max_lengths[1])
+        filtered_dil_deepfake = utils.fill_missing_data_with_nan(dilation=dilation_deepfake, max_length=max_lengths[2])
+         
+       
+        #only a few data points are of max length, this results in very steep changes in the graph. Taking thse points away, cleans the graph
+        mean_dilations = [
+             np.nanmean(filtered_dil_self, axis=0)[:-6],
+             np.nanmean(filtered_dil_other, axis=0)[:-6],
+             np.nanmean(filtered_dil_deepfake, axis=0)[:-6]
+        ]
 
         diff_len = np.min([len(mean_dilations[2]), len(mean_dilations[0])])
         self_df_diff_dil = mean_dilations[2][:diff_len]-mean_dilations[0][:diff_len]
-        min_lengths.append(diff_len)
+        max_lengths.append(diff_len)
 
         plot_data = {
              'self' : mean_dilations[0],
              'other' : mean_dilations[1],
              'deepfake': mean_dilations[2],
-             'difference_self_deepfake': self_df_diff_dil
+             'difference between self/deepfake': self_df_diff_dil
         }
 
         for index, opt in enumerate(options):
               fig.add_trace(go.Scatter(
-                   x=np.linspace(start=0, stop=3, num=min_lengths[index]), 
+                   x=np.linspace(start=0, stop=3, num=(max_lengths[index])-6), 
                    y=plot_data[opt], 
                    mode='lines', name=opt,
               ))
-        fig_title = 'Graph of labels for ' + self.subject
+        fig_title = 'Pupil size change over time for each labels of ' + self.subject
         fig.update_layout(
-             title=fig_title
-        )
+    title=fig_title,
+    xaxis_title='Time, t in seconds',
+    yaxis_title='Pupil size d, normalised'
+)
         fig.show()
         fig.to_html('mean_graph_sub2.html')
 
@@ -315,7 +319,7 @@ class Dataset():
         )
         fig.show()
 
-    def plot_dilation_over_time(self, label:str):
+    def plot_dilation_over_time(self):
         fig = go.Figure()
 
         self_ = [entry for entry in self.data if entry['LABEL'].values.all()=='self']

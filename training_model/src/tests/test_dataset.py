@@ -6,6 +6,7 @@ import unittest
 
 import plotly.graph_objects as go
 import plotly.express as px
+from plotly.subplots import make_subplots
 import numpy as np
 from collections import Counter
 
@@ -15,13 +16,13 @@ def test_data_loader():
     pass
 
 def test_preprocessing():
-    dataset = Dataset(filepath=PATH, subject='subject1')
+    dataset = Dataset(filepath=PATH, subject='subject2')
     dataset.preprocess_data()
     return dataset.data
 
 def test_feature_extraction():
-    dataset = Dataset(filepath=PATH, subject='subject3')
-    dataset.preprocess_data(measurement_timeframe="1000ms")
+    dataset = Dataset(filepath=PATH, subject='subject2')
+    dataset.preprocess_data(measurement_timeframe="3000ms")
     X, y = dataset.feature_extraction()
     counter = Counter(y)
     self_count = (counter['self'])
@@ -38,7 +39,7 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual('foo'.upper(), 'FOO')
 
 def test_visualizing_data():
-    dataset = Dataset(filepath=PATH, subject='subject2')
+    dataset = Dataset(filepath=PATH, subject='subject3')
     dataset.preprocess_data(measurement_timeframe="3000ms")
     dataset.visualisation()
     #ataset.plot_dilation_over_time(label='self')
@@ -60,6 +61,48 @@ def get_time_per_subject():
 
     print("")
 
+def test_data_distribution():
+    fig = make_subplots(rows=2, cols=2, shared_yaxes=True)
+
+    dataset_sub1 = Dataset(filepath=PATH, subject='subject1')
+    dataset_sub1.preprocess_data(measurement_timeframe ="1000ms")
+
+    dataset_sub2 = Dataset(filepath=PATH, subject='subject2')
+    dataset_sub2.preprocess_data(measurement_timeframe ="1000ms")
+
+    dataset_sub3 = Dataset(filepath=PATH, subject='subject3')
+    dataset_sub3.preprocess_data(measurement_timeframe ="1000ms")
+
+    dil_sub1 = [len(entry['dilation'].values) for entry in dataset_sub1.data]
+    dil_sub2 = [len(entry['dilation'].values) for entry in dataset_sub2.data]
+    dil_sub3 = [len(entry['dilation'].values) for entry in dataset_sub3.data]
+
+    dil_all = []
+    dil_all.extend(dil_sub1)
+    dil_all.extend(dil_sub2)
+    dil_all.extend(dil_sub3)
+
+    fig.append_trace (go.Histogram(x=dil_sub1, name='subject1'), 1, 1)
+    fig.append_trace(go.Histogram(x=dil_sub2, name= 'subject2'), 1, 2)
+    fig.append_trace(go.Histogram(x=dil_sub3, name='subject3'), 2, 1)
+    fig.append_trace(go.Histogram(x=dil_all, name='all subjects'), 2, 2)
+
+    # Update x-axes titles
+    fig.update_xaxes(title_text="Length l of dilation entries", row=1, col=1)
+    fig.update_xaxes(title_text="Length l of dilation entries", row=1, col=2)
+    fig.update_xaxes(title_text="Length l of dilation entries", row=2, col=1)
+    fig.update_xaxes(title_text="Length l of dilation entries", row=2, col=2)
+
+    # Update y-axes titles
+    fig.update_yaxes(title_text="Count of entries per length", row=1, col=1)
+    fig.update_yaxes(title_text="Count of entries per length", row=2, col=2)
+    fig.update_yaxes(title_text="Count of entries per length", row=2, col=1)
+    fig.update_yaxes(title_text="Count of entries per length", row=2, col=2)
+
+    fig.update_layout(
+    title=f"Distribution of size of dilation data entries for subject1, subject2, subject3"
+)
+    fig.show()
+
 if __name__ == "__main__":
     test_visualizing_data()
-    print("")

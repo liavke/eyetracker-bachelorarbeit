@@ -2,7 +2,6 @@ import sys
 import os
 sys.path.append(os.getenv('PATH_TO_CLASSIFICATION'))
 
-from classifiers import SVM_BaseClassifier
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
@@ -19,7 +18,7 @@ def get_best_features_svm(X, y):
 
     for feature_name in X:
         X_train, y_train, X_test, y_test = train_test_split(X[feature_name], y, test_size=0.2, shuffle=False)
-        model = SVM_BaseClassifier()
+        model = None
         model.fit(X_train=X_train,y_train=y_train)
         score = model.evaluate()
 
@@ -46,22 +45,28 @@ def calculate_eer(y_test, predictions):
     """
 
     #eer for self
-    self_eer = eer(current_label='self', ground_truth=y_test, predictions=predictions)
+    binary_ground_truth, binary_prediction = turn_data_binary(current_label='self', ground_truth=y_test, predictions=predictions)
+    self_eer  = eer( binary_ground_truth, binary_prediction)
 
     #eer for friend
-    friend_eer = eer(current_label='other', ground_truth=y_test, predictions=predictions)
+    binary_ground_truth, binary_prediction = turn_data_binary(current_label='other', ground_truth=y_test, predictions=predictions)
+    other_eer = eer( binary_ground_truth, binary_prediction)
     
     #eer for deepfake
-    deepfake_eer = eer(current_label='deepfake', ground_truth=y_test, predictions=predictions)
+    binary_ground_truth, binary_prediction = turn_data_binary(current_label='deepfake', ground_truth=y_test, predictions=predictions)
+    deepfake_eer  = eer( binary_ground_truth, binary_prediction)
 
-    avg_eer = (self_eer+friend_eer+deepfake_eer)/3
+    avg_eer = (self_eer+other_eer+deepfake_eer)/3
     return avg_eer
 
-
-def eer(current_label, ground_truth, predictions):
-     #source: https://stackoverflow.com/questions/28339746/equal-error-rate-in-python
+def turn_data_binary(current_label, ground_truth, predictions):
     binary_ground_truth = [label == current_label for label in ground_truth]
     binary_prediction = [label == current_label for label in predictions]
-    fpr, tpr, _ = roc_curve(binary_ground_truth, binary_prediction)
+    return binary_ground_truth, binary_prediction
+
+
+def eer( ground_truth, predictions):
+     #source: https://stackoverflow.com/questions/28339746/equal-error-rate-in-python
+    fpr, tpr, _ = roc_curve(ground_truth, predictions)
     fnr = 1 - tpr
     return fpr[np.nanargmin(np.absolute((fnr - fpr)))]

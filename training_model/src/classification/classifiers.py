@@ -10,6 +10,8 @@ logging.basicConfig(filename=f'src/logs/{datetime.now()}_best_params.log', level
 import pandas as pd
 import numpy as np
 
+import plotly.express as px
+
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC # "Support vector BaseClassifier"
@@ -78,10 +80,13 @@ class MultiBaseClassifiers(BaseClassifier):
         
         for model_name, pred in predictions.items():
             num_y , num_pred = self._turn_labels_numeric(y_test, pred)
+            percision, recall = utils.calculate_percision_recall(y_test=y_test, predictions=pred)
             score_df = pd.DataFrame({
                 "model_name" : model_name,
                 "eer_score" : [utils.calculate_eer(y_test=y_test, predictions=pred)],
                 "f1_score" : [f1_score(y_pred=pred, y_true=y_test, average='micro')],
+                "percision":[percision],
+                "recall":[recall]
                 })
             evaluations = pd.concat([evaluations, score_df])
 
@@ -108,9 +113,9 @@ class MultiBaseClassifiers(BaseClassifier):
         params = grid.best_params_
         logging.info(f'best parameters for svc: {params}')
         if params['kernel'] == 'rbf':
-            return SVC(kernel = params['kernel'], C=params['C'], gamma= params['gamma'])
+            return SVC(kernel = params['kernel'], C=params['C'], gamma= params['gamma'], probability=True)
         if params['kernel'] == 'linear':
-            return  SVC(kernel = params['kernel'], C=params['C'])
+            return  SVC(kernel = params['kernel'], C=params['C'], probability=True)
 
     def _find_best_tree(self,x_train, y_train, config):
         grid = GridSearchCV(estimator=tree.DecisionTreeClassifier(), param_grid=config, cv=5, scoring='accuracy',refit = True, verbose = 3)
@@ -130,12 +135,20 @@ class MultiBaseClassifiers(BaseClassifier):
                                            min_samples_leaf=params['min_samples_leaf'], 
                                            min_samples_split=params['min_samples_split'],
                                            n_estimators=params['n_estimators'])
-
-    def _set_feature_n(self):
+    def p_(self):
         pass
 
-    def _get_best_feature(self):
-        pass
+    def visualise_roc(self):
+        X_train, X_test, y_train, y_test = self.train_test_data
+        pred = self.predict(X_test=X_test)
+
+        for model_name, pred in pred.items():
+            fpr_tpr = utils.eer_for_visualisation(X_test, pred)
+            fig = px.line(fpr_tpr, x='False Positive Rate', y='True Positive Rate', title = f'ROC Curve for {model_name}')
+            fig.show()
+
+
+
 
 class BinaryBaseClassifiers(BaseClassifier):
     def __init__(self, X, y) -> None:

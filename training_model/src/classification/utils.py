@@ -4,8 +4,9 @@ sys.path.append(os.getenv('PATH_TO_CLASSIFICATION'))
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, confusion_matrix
 import numpy as np
+
 
 def visualise_auoc():
     pass
@@ -70,3 +71,14 @@ def eer( ground_truth, predictions):
     fpr, tpr, _ = roc_curve(ground_truth, predictions)
     fnr = 1 - tpr
     return fpr[np.nanargmin(np.absolute((fnr - fpr)))]
+
+def calculate_percision_recall(y_true, predictions):
+    #source: https://stackoverflow.com/questions/52215603/how-to-get-precision-and-recall-using-linear-svc-of-svm 
+    tn, fp, fn, tp = confusion_matrix(y_true, predictions).ravel()
+    precision_score = tp / (tp + fp)
+    recall_score = tp / (tp + fn)
+    return precision_score, recall_score
+
+def eer_for_visualisation(ground_truth, predictions):
+    fpr, tpr, _ = roc_curve(ground_truth, predictions)
+    return pd.DataFrame({'False Positive Rate': fpr, 'True Positive Rate':tpr})

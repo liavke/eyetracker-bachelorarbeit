@@ -27,6 +27,8 @@ def main(binary=False):
     score_df, prediction_df = classifiers.run()
     score_df.to_csv(SAVE_PATH+current_subject+"/"+current_subject+"_"+measurement_time+".csv", index=False)
     prediction_df.to_csv(SAVE_PATH+current_subject+"/raw_predictions"+"_"+measurement_time+".csv", index=False)
+    classifiers.visualise_roc()
+
 
 if __name__ == "__main__":
     main(binary=False)

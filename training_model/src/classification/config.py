@@ -44,7 +44,6 @@ class ClassifiersConfig():
 
     #source: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
     rf_config = {
-    'bootstrap': [True],
     'max_depth': [80, 90, 100, 110],
     'min_samples_leaf': [5, 10, 15, 20],
     'min_samples_split': [10, 20, 30, 40],

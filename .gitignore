@@ -3,3 +3,4 @@ training_model/src/data
 venv
 *.env
 *.pyc
+training_model/src/logs

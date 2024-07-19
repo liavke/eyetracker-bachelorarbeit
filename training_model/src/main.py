@@ -7,7 +7,7 @@ import os
 from src.classification.classifiers import MultiBaseClassifiers, BinaryBaseClassifiers
 
 def main(binary=False):
-    current_subject = 'subject2'
+    current_subject = 'subject3'
     measurement_time = '3000ms'
 
     PATH =  os.getenv('PATH_TO_TM')+ "/src/data/" 

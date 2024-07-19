@@ -9,6 +9,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import numpy as np
 from collections import Counter
+from src.classification.classifiers import MultiBaseClassifiers
 
 PATH =  os.getenv('PATH_TO_TM')+ "/src/data/"
 
@@ -104,5 +105,23 @@ def test_data_distribution():
 )
     fig.show()
 
+def find_best_params_for_svm():
+    subjects = ['subject3']
+    mss = ['3000ms', '1500ms', '1000ms']
+
+    out = []
+
+    for subject in subjects:
+        for ms in mss:
+            dataset = Dataset(filepath=PATH, subject=subject)
+            dataset.preprocess_data(measurement_timeframe=ms)
+            X, y = dataset.feature_extraction()
+            classifiers = MultiBaseClassifiers(X=X, y=y)
+            params = classifiers.find_best_params()
+            params['ms'] = ms
+            params['subject'] = subject
+            out.append(params)
+    print(out)
+ 
 if __name__ == "__main__":
-    test_visualizing_data()
+    find_best_params_for_svm()

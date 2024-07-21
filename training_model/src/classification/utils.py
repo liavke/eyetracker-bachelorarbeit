@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve, confusion_matrix
 import numpy as np
+from sklearn.preprocessing import LabelBinarizer
 
 
 def visualise_auoc():
@@ -82,3 +83,8 @@ def calculate_percision_recall(y_true, predictions):
 def eer_for_visualisation(ground_truth, predictions):
     fpr, tpr, _ = roc_curve(ground_truth, predictions)
     return pd.DataFrame({'False Positive Rate': fpr, 'True Positive Rate':tpr})
+
+def calculate_average_aucroc(y_train,y_test, predictions):
+    #source: https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html
+    label_binarizer = LabelBinarizer().fit(y_train)
+    y_onehot_test = label_binarizer.transform(y_test)

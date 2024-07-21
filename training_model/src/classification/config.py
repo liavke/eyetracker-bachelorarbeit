@@ -37,16 +37,16 @@ class ClassifiersConfig():
         ]
     
     dt_config = param_grid = {
-    'max_depth': [80, 90, 100, 110],
+    'max_depth': [30, 50 ,70, 100],
     'min_samples_leaf': [5, 10, 15, 20],
     'min_samples_split': [10, 20, 30, 40],
     }
 
     #source: https://towardsdatascience.com/hyperparameter-tuning-the-random-forest-in-python-using-scikit-learn-28d2aa77dd74
     rf_config = {
-    'max_depth': [80, 90, 100, 110],
+    'max_depth': [30 ,50 ,70, 100],
     'min_samples_leaf': [5, 10, 15, 20],
     'min_samples_split': [10, 20, 30, 40],
-    'n_estimators': [100, 200, 300, 1000]
+    'n_estimators': [100, 400, 600, 1000]
 }
     

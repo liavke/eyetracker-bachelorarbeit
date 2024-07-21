@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 
 import plotly.express as px
+import matplotlib.pyplot as plt
 
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
@@ -51,6 +52,8 @@ class MultiBaseClassifiers(BaseClassifier):
         self.svm_model.fit(X_train, y_train)
         print("### TRAINING TREES ###")
         self.trees_model.fit(X_train, y_train)
+        print("### TRAINING FORESTS ###")
+        self.rf_model.fit(X_train, y_train)
         print("### TRAINING NAIV BAYES ###")
         self.nb_model.fit(X_train,y_train)
 
@@ -59,6 +62,7 @@ class MultiBaseClassifiers(BaseClassifier):
         return {
             "SVM" : self.svm_model.predict(X=X_test),
             "Trees": self.trees_model.predict(X_test),
+            "Forests": self.rf_model.predict(X_test),
             "NaiveBayes": self.nb_model.predict(X_test),
         }
     
@@ -66,11 +70,12 @@ class MultiBaseClassifiers(BaseClassifier):
         return {
             "SVM" : self.svm_model.predict_proba(X=X_test),
             "Trees": self.trees_model.predict_proba(X_test),
+            "Forests": self.rf_model.predict_proba(X_test),
             "NaiveBayes": self.nb_model.predict_proba(X_test),
         }
         
 
-    def evaluate(self, X_test, y_test):
+    def evaluate(self, X_test, y_test, y_train):
         evaluations = pd.DataFrame()
         raw_results = pd.DataFrame()
         roc_auc_list = []
@@ -80,20 +85,20 @@ class MultiBaseClassifiers(BaseClassifier):
         
         for model_name, pred in predictions.items():
             num_y , num_pred = self._turn_labels_numeric(y_test, pred)
-            percision, recall = utils.calculate_percision_recall(y_test=y_test, predictions=pred)
+            #percision, recall = utils.calculate_percision_recall(y_test=y_test, predictions=pred)
             score_df = pd.DataFrame({
                 "model_name" : model_name,
                 "eer_score" : [utils.calculate_eer(y_test=y_test, predictions=pred)],
-                "f1_score" : [f1_score(y_pred=pred, y_true=y_test, average='micro')],
-                "percision":[percision],
-                "recall":[recall]
+                "f1_score" : [f1_score(y_pred=pred, y_true=y_test, average='macro')],
+                #"percision":[percision],
+                #"recall":[recall]
                 })
             evaluations = pd.concat([evaluations, score_df])
 
             raw_results[model_name] = pred
         
         for item in prediction_probablities.values():
-            rocauc_score = roc_auc_score(y_score=item, y_true=y_test, multi_class='ovr')
+            rocauc_score = roc_auc_score(y_score=item, y_true=y_test, multi_class='ovr', average='macro')
             roc_auc_list.append(rocauc_score)
 
         evaluations["rocauc_score"] = roc_auc_list
@@ -146,6 +151,20 @@ class MultiBaseClassifiers(BaseClassifier):
             fpr_tpr = utils.eer_for_visualisation(X_test, pred)
             fig = px.line(fpr_tpr, x='False Positive Rate', y='True Positive Rate', title = f'ROC Curve for {model_name}')
             fig.show()
+    
+    def plot_confusion_matrix(self):
+
+        X_train, X_test, y_train, y_test = self.train_test_data
+        fig ,ax = plt.subplots(figsize=(8,6))
+        predictions = self.predict(X_test=X_test)
+        for model_name, pred in predictions.items():
+            cm = confusion_matrix(y_true=y_test, y_pred=pred, labels=['self', 'other', 'deepfake'])
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['self', 'other', 'deepfake'])
+            disp.plot()
+            plt.title(f'Confusion matrix for model {model_name}')
+            plt.xlabel('Predicted Label')
+            plt.ylabel('True Label')
+            plt.show()
 
 
 

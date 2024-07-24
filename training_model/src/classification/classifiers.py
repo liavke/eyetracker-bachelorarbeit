@@ -8,7 +8,6 @@ import logging
 logging.basicConfig(filename=f'src/logs/{datetime.now()}_best_params.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 import pandas as pd
-import numpy as np
 
 import plotly.express as px
 import matplotlib.pyplot as plt
@@ -17,7 +16,7 @@ from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC # "Support vector BaseClassifier"
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import f1_score, roc_auc_score
+from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay, accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
 
 import src.classification.utils as utils
@@ -28,23 +27,17 @@ class MultiBaseClassifiers(BaseClassifier):
         self.y = y
         self.train_test_data = train_test_split(self.X, self.y, test_size=0.33, random_state=42, shuffle=True)
 
-        self.svm_model = self._find_best_svm(x_train=self.train_test_data[0], 
-                                               y_train=self.train_test_data[2],
-                                               config = ClassifiersConfig.svc_config)
+        self.svm_model = SVC(C=1000, kernel='rbf', gamma=1, probability=True)#self._find_best_svm(x_train=self.train_test_data[0], y_train=self.train_test_data[2],  config = ClassifiersConfig.svc_config)
         
-        self.trees_model = self._find_best_tree(x_train=self.train_test_data[0], 
-                                                 y_train=self.train_test_data[2],
-                                                 config = ClassifiersConfig.dt_config)
+        self.trees_model = tree.DecisionTreeClassifier(max_depth=100, min_samples_leaf=5, min_samples_split=10)#self._find_best_tree(x_train=self.train_test_data[0], y_train=self.train_test_data[2], config = ClassifiersConfig.dt_config)
         
-        self.rf_model = self._find_best_forest(x_train=self.train_test_data[0], 
-                                              y_train=self.train_test_data[2],
-                                              config = ClassifiersConfig.rf_config)
+        self.rf_model = RandomForestClassifier(max_depth=80, min_samples_leaf=5, min_samples_split=10, n_estimators=100)#self._find_best_forest(x_train=self.train_test_data[0], y_train=self.train_test_data[2], config = ClassifiersConfig.rf_config)
         self.nb_model = GaussianNB()
     
     def run(self, binary=False):
         X_train, X_test, y_train, y_test = self.train_test_data
         self.fit(X_train=X_train, y_train=y_train)        
-        return self.evaluate(X_test=X_test, y_test=y_test)
+        return self.evaluate(X_test=X_test, y_test=y_test, y_train=y_train)
 
     def fit(self, X_train, y_train):
         # defining parameter range 
@@ -88,6 +81,7 @@ class MultiBaseClassifiers(BaseClassifier):
             #percision, recall = utils.calculate_percision_recall(y_test=y_test, predictions=pred)
             score_df = pd.DataFrame({
                 "model_name" : model_name,
+                "accuracy": [accuracy_score(y_true=y_test, y_pred=pred)],
                 "eer_score" : [utils.calculate_eer(y_test=y_test, predictions=pred)],
                 "f1_score" : [f1_score(y_pred=pred, y_true=y_test, average='macro')],
                 #"percision":[percision],
@@ -140,8 +134,6 @@ class MultiBaseClassifiers(BaseClassifier):
                                            min_samples_leaf=params['min_samples_leaf'], 
                                            min_samples_split=params['min_samples_split'],
                                            n_estimators=params['n_estimators'])
-    def p_(self):
-        pass
 
     def visualise_roc(self):
         X_train, X_test, y_train, y_test = self.train_test_data
@@ -165,8 +157,6 @@ class MultiBaseClassifiers(BaseClassifier):
             plt.xlabel('Predicted Label')
             plt.ylabel('True Label')
             plt.show()
-
-
 
 
 class BinaryBaseClassifiers(BaseClassifier):

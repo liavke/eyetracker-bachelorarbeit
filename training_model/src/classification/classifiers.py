@@ -2,21 +2,19 @@ import sys
 import os
 sys.path.append(os.getenv('PATH_TO_CLASSIFICATION'))
 
-from src.classification.config import BaseClassifier, ClassifiersConfig
-from datetime import datetime
+from src.classification.config import BaseClassifier
 import logging
-logging.basicConfig(filename=f'src/logs/{datetime.now()}_best_params.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+#logging.basicConfig(filename=f'src/logs/{datetime.now()}_best_params.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 import pandas as pd
 
 import plotly.express as px
-import matplotlib.pyplot as plt
 
 from sklearn import tree
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC # "Support vector BaseClassifier"
 from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import f1_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from sklearn.metrics import f1_score, roc_auc_score, accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
 
 import src.classification.utils as utils
@@ -137,7 +135,7 @@ class MultiBaseClassifiers(BaseClassifier):
 
     def visualise_roc(self):
         X_train, X_test, y_train, y_test = self.train_test_data
-        pred = self.predict(X_test=X_test)
+        pred = self.predict_prob(X_test=X_test)
 
         for model_name, pred in pred.items():
             fpr_tpr = utils.eer_for_visualisation(X_test, pred)
@@ -145,18 +143,10 @@ class MultiBaseClassifiers(BaseClassifier):
             fig.show()
     
     def plot_confusion_matrix(self):
-
         X_train, X_test, y_train, y_test = self.train_test_data
-        fig ,ax = plt.subplots(figsize=(8,6))
         predictions = self.predict(X_test=X_test)
-        for model_name, pred in predictions.items():
-            cm = confusion_matrix(y_true=y_test, y_pred=pred, labels=['self', 'other', 'deepfake'])
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['self', 'other', 'deepfake'])
-            disp.plot()
-            plt.title(f'Confusion matrix for model {model_name}')
-            plt.xlabel('Predicted Label')
-            plt.ylabel('True Label')
-            plt.show()
+        utils.visualize_cm(predictions=predictions, y_test=y_test)
+        
 
 
 class BinaryBaseClassifiers(BaseClassifier):
@@ -168,7 +158,7 @@ class BinaryBaseClassifiers(BaseClassifier):
         self.X = X
         self.y = y
     
-    def run(self, binary=False):
+    def run(self):
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.33, random_state=42, shuffle=True)
         self.fit(X_train=X_train, y_train=y_train)        
         return self.evaluate(X_test=X_test, y_test=y_test)
@@ -206,18 +196,19 @@ class BinaryBaseClassifiers(BaseClassifier):
         prediction_probablities = self.predict_prob(X_test)
 
         for model_name, pred in predictions.items():
-            eer,_, _, _ = utils.eer(ground_truth=y_test, predictions=pred)
+            eer = utils.eer(ground_truth=y_test, predictions=pred)
             score_df = pd.DataFrame({
                 "model_name" : model_name,
                 "eer_score" : [eer],
-                "f1_score" : [f1_score(y_pred=pred, y_true=y_test, average='micro')]
+                "accuracy": [accuracy_score(y_true=y_test, y_pred=pred)],
+                "f1_score" : [f1_score(y_pred=pred, y_true=y_test, average='binary')]
                 })
             evaluations = pd.concat([evaluations, score_df])
 
             raw_results[model_name] = pred
 
         for item in prediction_probablities.values():
-            rocauc_score = roc_auc_score(y_score=item, y_true=y_test, multi_class='ovr')
+            rocauc_score = roc_auc_score(y_score=item[:,1], y_true=y_test)
             roc_auc_list.append(rocauc_score)
 
         evaluations["rocauc_score"] = roc_auc_list

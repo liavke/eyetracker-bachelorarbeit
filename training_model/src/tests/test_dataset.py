@@ -11,6 +11,8 @@ import numpy as np
 from collections import Counter
 from src.classification.classifiers import MultiBaseClassifiers
 
+import pandas as pd
+
 PATH =  os.getenv('PATH_TO_TM')+ "/src/data/"
 
 def test_data_loader():
@@ -123,5 +125,25 @@ def find_best_params_for_svm():
             out.append(params)
     print(out)
  
+def test_count_results():
+    subject1_path = PATH +'results/subject1/' 
+    subject2_path = PATH +'results/subject2/'
+
+    for filepath in os.listdir(subject1_path):
+        result = pd.read_csv(os.path.join(subject1_path, filepath))
+        #SVM,Trees,RandomForests,NaiveBayes,ground trut
+        print(filepath)
+        print(f'SVM: ')
+        print(result['SVM'].value_counts().sort_index())
+        print( f'TREES:')
+        print(result['Trees'].value_counts().sort_index())
+        print( f'RANDOM FORETSTS: ')
+        print(result['RandomForests'].value_counts().sort_index())
+        print(f'NAIVE BAYES ')
+        print(result['NaiveBayes'].value_counts().sort_index())
+        print( f'GROUND TRUTH: ')
+        print(result['ground truth'].value_counts().sort_index())
+        
+
 if __name__ == "__main__":
-    find_best_params_for_svm()
+    test_count_results()

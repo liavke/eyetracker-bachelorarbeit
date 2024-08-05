@@ -8,7 +8,7 @@ from src.classification.classifiers import MultiBaseClassifiers, BinaryBaseClass
 
 def main(binary=False):
     current_subject = 'subject3'
-    measurement_time = '1000ms'
+    measurement_time = '3000ms'
 
     PATH =  os.getenv('PATH_TO_TM')+ "/src/data/" 
     SAVE_PATH = os.getenv('PATH_TO_TM')+ "/src/data/results/"
@@ -25,8 +25,8 @@ def main(binary=False):
 
     classifiers = MultiBaseClassifiers(X=X, y=y)
     score_df, prediction_df = classifiers.run()
-    score_df.to_csv(SAVE_PATH+current_subject+"/"+current_subject+"_"+measurement_time+".csv", index=False)
-    prediction_df.to_csv(SAVE_PATH+current_subject+"/raw_predictions"+"_"+measurement_time+".csv", index=False)
+    score_df.to_csv(SAVE_PATH+current_subject+"/"+current_subject+"_binary_"+measurement_time+".csv", index=False)
+    prediction_df.to_csv(SAVE_PATH+current_subject+"/raw_predictions_binary"+"_"+measurement_time+".csv", index=False)
     #classifiers.visualise_roc()
 
 

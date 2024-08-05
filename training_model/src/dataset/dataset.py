@@ -55,6 +55,7 @@ class Dataset():
             X = feature_pipeline.run()
             X_df = pd.concat([X_df, X])
             Y_list.append(Y)
+        X_df = utils.chi_feature_selection(X=X_df, y=Y_list) 
         balanced_x, balanced_y = utils.balance_data(X=X_df, y=Y_list)
         return balanced_x, balanced_y
 
@@ -151,7 +152,7 @@ class Dataset():
 
                                             #init the time
                                             temp_data = datapoint.iloc[next_index: end_time_index].copy()
-                                            #temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
+                                            temp_data['TIME'] = np.linspace(0, 3, temp_data.shape[0])
 
                                             if not utils.has_blink(temp_data.iloc[:-500]):
                                                 
@@ -240,8 +241,11 @@ class Dataset():
         data['USER'] = self.subject
         return data
     
-    def visualisation(self, options: list[str] = ['self', 'other', 'deepfake', 'difference between self/deepfake']):
+    def visualisation(self, options: list[str] = ['self', 'other', 'deepfake']):#, 'difference between self/deepfake']):
         fig = go.Figure()
+
+        start_time = self.data[0]['TIME'].iloc[0]
+        end_time = self.data[0]['TIME'].iloc[-1]
 
         dilation_self = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='self']
         dilation_other = [entry['dilation'].values for entry in self.data if entry['LABEL'].values.all()=='other']
@@ -271,12 +275,12 @@ class Dataset():
              'self' : mean_dilations[0],
              'other' : mean_dilations[1],
              'deepfake': mean_dilations[2],
-             'difference between self/deepfake': self_df_diff_dil
+             #'difference between self/deepfake': self_df_diff_dil
         }
 
         for index, opt in enumerate(options):
               fig.add_trace(go.Scatter(
-                   x=np.linspace(start=0, stop=3, num=(max_lengths[index])-6), 
+                   x=np.linspace(start=start_time, stop=end_time, num=(max_lengths[index])-6), 
                    y=plot_data[opt], 
                    mode='lines', name=opt,
               ))
@@ -287,7 +291,7 @@ class Dataset():
     yaxis_title='Pupil size d, normalised'
 )
         fig.show()
-        fig.to_html('mean_graph_sub2.html')
+        fig.to_html(f'mean_graph_{self.subject}.html')
 
     def visualize_raw_data(self, options):
         fig = go.Figure()
@@ -352,5 +356,3 @@ class Dataset():
                 ))
         
         fig.show()
-        
-

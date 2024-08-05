@@ -4,9 +4,11 @@ sys.path.append(os.getenv('PATH_TO_CLASSIFICATION'))
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_curve, confusion_matrix
+from sklearn.metrics import roc_curve, confusion_matrix, ConfusionMatrixDisplay, accuracy_score
 import numpy as np
 from sklearn.preprocessing import LabelBinarizer
+
+import matplotlib.pyplot as plt
 
 
 def visualise_auoc():
@@ -88,3 +90,17 @@ def calculate_average_aucroc(y_train,y_test, predictions):
     #source: https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html
     label_binarizer = LabelBinarizer().fit(y_train)
     y_onehot_test = label_binarizer.transform(y_test)
+
+def visualize_cm(predictions, y_test):
+    for model_name, pred in predictions.items():
+        print(model_name)
+        print(f'accuracy: {accuracy_score(y_pred=pred, y_true=y_test)}')
+        print(f'eer: {eer(ground_truth=y_test, predictions=pred)}')
+
+        cm = confusion_matrix(y_true=y_test, y_pred=pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.title(f'Confusion matrix for model {model_name}')
+        plt.xlabel('Predicted Label')
+        plt.ylabel('True Label')
+        plt.show()

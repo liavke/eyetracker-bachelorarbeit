@@ -1,10 +1,8 @@
 import pandas as pd
-from config import ColumnNames, Features
+from config import  Features
 import numpy as np
-from sklearn.impute import SimpleImputer
 import numpy as np
 from alive_progress import alive_bar
-import time
 from scipy.fft import fft
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -32,14 +30,5 @@ class FeatureExtractionPipeline:
                 Features.MEAN: [np.mean(self.X)],
                 Features.MIN: [np.min(self.X)],
                 Features.STD: [np.std(self.X)],
-                #Features.VAR: [np.var(self.X)],
-                #Features.POWER : [np.mean(self.X ** 2)],
-                #Features.PEAK : [np.max(np.abs(self.X))],
-                #Features.P2P : [np.ptp(self.X)],
-                #Features.CRESTFACTOR :[np.max(np.abs(self.X)) / np.sqrt(np.mean(self.X ** 2))],
-                Features.MAX_FOURIER: np.max(S),
-                #Features.SUM_FOURIER: np.sum(S),
-                Features.MEAN_FOURIER: np.mean(S),
-                Features.VAR_FOURIER: np.var(S),
-                Features.PEAK_FOURIER: np.max(np.abs(S)),
+                Features.VAR: [np.var(self.X)],
             })

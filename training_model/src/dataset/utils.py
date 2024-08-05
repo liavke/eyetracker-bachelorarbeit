@@ -1,10 +1,11 @@
 import os
 import pandas as pd
-from feature_extraction import FeatureExtractionPipeline
 import pickle
 import numpy as np
 import plotly.graph_objects as go
 from imblearn.over_sampling import SMOTE
+
+from sklearn.feature_selection import SelectKBest, f_classif
 
 from scipy.ndimage import gaussian_filter1d
 
@@ -158,3 +159,38 @@ def fill_missing_data_with_nan(dilation, max_length):
         entry = np.append(entry, [np.nan]*(max_length -len(entry)))
         out.append(entry)
     return out
+
+def chi_feature_selection(X, y):
+    X_new = SelectKBest(f_classif, k=4).fit_transform(X, y)
+    visualize_correlated_features(X, y)
+    return X_new
+
+def visualize_correlated_features(X, y):
+    # Compute ANOVA F-values
+    f_values, _ = f_classif(X, y)
+
+    # Create a DataFrame for visualization
+    feature_scores = pd.DataFrame({'Feature': X.columns, 'Score': f_values})
+
+    # Sort by score
+    feature_scores = feature_scores.sort_values(by='Score', ascending=False)
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        x=feature_scores['Feature'],
+        y=feature_scores['Score']
+    ))
+
+    fig.update_layout(
+        title='Feature Scores with Measurement Timeframe 3000ms',
+        xaxis_title='Features',
+        yaxis_title='ANOVA F-Value',
+        titlefont=dict(size=30),
+        xaxis_title_font=dict(size=22),  
+        yaxis_title_font=dict(size=22), 
+        xaxis_tickfont=dict(size=22),   
+        yaxis_tickfont=dict(size=22)
+    )
+
+    fig.show()

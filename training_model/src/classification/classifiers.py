@@ -1,6 +1,6 @@
 import sys
 import os
-sys.path.append(os.getenv('PATH_TO_CLASSIFICATION'))
+sys.path.append(os.getenv('PATH_TO_TM'))
 
 from src.classification.config import BaseClassifier
 import logging
@@ -151,15 +151,17 @@ class MultiBaseClassifiers(BaseClassifier):
 
 class BinaryBaseClassifiers(BaseClassifier):
     def __init__(self, X, y) -> None:
-        self.svm_model = SVC(kernel='linear', C=1E10, probability=True)
-        self.trees_model = tree.DecisionTreeClassifier()
-        #self.kmeans_model = KMeans(n_clusters=3)
-        self.nb_model = GaussianNB()
         self.X = X
         self.y = y
+        self.train_test_data = train_test_split(self.X, self.y, test_size=0.33, random_state=42, shuffle=True)
+
+        self.svm_model = SVC(kernel='sigmoid', C=1, coef0=0, probability=True)
+        self.trees_model = tree.DecisionTreeClassifier(max_depth=100,min_samples_leaf=5,min_samples_split=10)
+        self.rf_model = RandomForestClassifier(max_depth=110, min_samples_leaf=5, min_samples_split=10, n_estimators=300)
+        self.nb_model = GaussianNB()
     
     def run(self):
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.33, random_state=42, shuffle=True)
+        X_train, X_test, y_train, y_test = self.train_test_data
         self.fit(X_train=X_train, y_train=y_train)        
         return self.evaluate(X_test=X_test, y_test=y_test)
 
@@ -169,6 +171,8 @@ class BinaryBaseClassifiers(BaseClassifier):
         self.svm_model.fit(X_train, y_train)
         print("### TRAINING TREES ###")
         self.trees_model.fit(X_train, y_train)
+        print("### TRAINING RANDOM FORETS ###")
+        self.rf_model.fit(X_train, y_train)
         print("### TRAINING NAIV BAYES ###")
         self.nb_model.fit(X_train,y_train)
 
@@ -177,6 +181,7 @@ class BinaryBaseClassifiers(BaseClassifier):
         return {
             "SVM" : self.svm_model.predict(X=X_test),
             "Trees": self.trees_model.predict(X_test),
+            "RandomForests" : self.rf_model.predict(X_test),
             "NaiveBayes": self.nb_model.predict(X_test),
         }
     
@@ -184,6 +189,7 @@ class BinaryBaseClassifiers(BaseClassifier):
         return {
             "SVM" : self.svm_model.predict_proba(X=X_test),
             "Trees": self.trees_model.predict_proba(X_test),
+            "RandomForests" : self.rf_model.predict_proba(X_test),
             "NaiveBayes": self.nb_model.predict_proba(X_test),
         }
 
@@ -214,3 +220,8 @@ class BinaryBaseClassifiers(BaseClassifier):
         evaluations["rocauc_score"] = roc_auc_list
         raw_results['ground truth'] = y_test
         return evaluations, raw_results
+    
+    def visualise_roc(self, title):
+        X_train, X_test, y_train, y_test = self.train_test_data
+        pred = self.predict_prob(X_test=X_test)
+        utils.visualise_roc(y_test=y_test, pred=pred, title=title)

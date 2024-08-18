@@ -44,7 +44,7 @@ class Dataset():
         self.data = dilation_data
         #self._save_data_as_pkl()
 
-    def feature_extraction(self):
+    def feature_extraction(self, binary=False):
         print("### FEATURE EXTRACTION ###")
         X_df = pd.DataFrame()
         Y_list = []
@@ -55,8 +55,12 @@ class Dataset():
             X = feature_pipeline.run()
             X_df = pd.concat([X_df, X])
             Y_list.append(Y)
-        X_df = utils.chi_feature_selection(X=X_df, y=Y_list) 
-        balanced_x, balanced_y = utils.balance_data(X=X_df, y=Y_list)
+        X_df = utils.chi_feature_selection(X=X_df, y=Y_list)
+        if binary:
+            new_y = [label == 'deepfake' for label in Y_list] 
+            balanced_x, balanced_y = utils.balance_data(X=X_df, y=new_y)
+            return balanced_x, balanced_y
+        balanced_x, balanced_y = utils.balance_data(X=X_df, y=new_y)
         return balanced_x, balanced_y
 
     def _get_dilation_periods(self, data, measurement_timeframe="3000ms"): #or windows? search a better name maybe

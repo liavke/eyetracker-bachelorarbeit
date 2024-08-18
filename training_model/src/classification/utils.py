@@ -9,6 +9,8 @@ import numpy as np
 from sklearn.preprocessing import LabelBinarizer
 
 import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 def visualise_auoc():
@@ -104,3 +106,18 @@ def visualize_cm(predictions, y_test):
         plt.xlabel('Predicted Label')
         plt.ylabel('True Label')
         plt.show()
+
+def visualise_roc(y_test, pred, title):
+    fig = go.Figure()
+
+    for model_name, pred in pred.items():
+        fpr, tpr, _ = roc_curve(y_test, pred[:,1])
+        fig.add_trace(go.Scatter(
+                x=fpr, y=tpr, mode='lines', name=model_name
+            ))
+    fig.update_layout(
+        title=title,
+        xaxis_title='False Positive Rate',
+        yaxis_title='True Positive Rate'
+    )
+    fig.show()

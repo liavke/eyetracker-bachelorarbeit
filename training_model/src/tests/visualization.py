@@ -5,7 +5,8 @@ sys.path.append(os.getenv('PATH_TO_TM'))
 import plotly.graph_objects as go 
 import matplotlib.pyplot as plt
 
-from sklearn.metrics import roc_curve
+from src.dataset.dataset import Dataset
+from src.classification.classifiers import BinaryBaseClassifiers
 
 import src.dataset.utils as utils
 import src.classification.utils as c_utils
@@ -73,7 +74,20 @@ def visualize_cm_from_raw():
      c_utils.visualize_cm(predictions=raw.iloc[:,:-1], y_test=raw['ground truth'])
 
 def main():
-     auc_visual()
+    current_subject = 'subject3'
+    measurement_time = '1000ms'
+
+    PATH =  os.getenv('PATH_TO_TM')+ "/src/data/" 
+    SAVE_PATH = os.getenv('PATH_TO_TM')+ "/src/data/results/"
+    dataset = Dataset(filepath=PATH, subject=current_subject)
+
+    dataset.preprocess_data(measurement_timeframe=measurement_time)
+    X, y = dataset.feature_extraction()
+
+    new_y = [label == 'deepfake' for label in y]
+    classifiers = BinaryBaseClassifiers(X=X, y=new_y)
+    _,_ = classifiers.run()
+    classifiers.visualise_roc(title=f'Roc curve for {current_subject}, at {measurement_time} measurement timeframe')
 
 if __name__ == "__main__":
      main()

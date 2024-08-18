@@ -1,0 +1,8 @@
+opencv-python
+plotly
+pandas
+numpy==1.26.4
+scikit-learn==1.5.0 
+jupyterlab
+alive-progress
+ imbalanced-learn==0.12.3 

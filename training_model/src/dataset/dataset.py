@@ -60,7 +60,7 @@ class Dataset():
             new_y = [label == 'deepfake' for label in Y_list] 
             balanced_x, balanced_y = utils.balance_data(X=X_df, y=new_y)
             return balanced_x, balanced_y
-        balanced_x, balanced_y = utils.balance_data(X=X_df, y=new_y)
+        balanced_x, balanced_y = utils.balance_data(X=X_df, y=Y_list)
         return balanced_x, balanced_y
 
     def _get_dilation_periods(self, data, measurement_timeframe="3000ms"): #or windows? search a better name maybe
